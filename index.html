@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>ZombieWord: Seen o New – Score Ilimitado</title>
+  <style>
+    /* =======================
+       RESET BÁSICO Y ESTILOS
+       ======================= */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+    }
+    body {
+      /* Fondo exterior: patrón retro oscuro */
+      background: repeating-linear-gradient(
+        45deg,
+        #111 0,
+        #111 10px,
+        #222 10px,
+        #222 20px
+      );
+      overflow: hidden;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    /* =======================
+       CONTENEDOR PRINCIPAL DEL JUEGO
+       ======================= */
+    #game-container {
+      position: relative;
+      width: 800px;
+      height: 500px;
+      border: 4px solid #333;
+      overflow: hidden;
+      background: #000; /* Fallback negro */
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+    }
+
+    /* =======================
+       HUD: Corazones y Score
+       ======================= */
+    #hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+      color: #fff;
+      text-shadow: 1px 1px 2px #000;
+    }
+    #hearts {
+      display: flex;
+      gap: 5px;
+    }
+    .heart {
+      width: 32px;
+      height: 32px;
+      background-size: cover;
+      background-repeat: no-repeat;
+    }
+    .heart.full {
+      background-image: url('assets/heart_full.png');
+    }
+    .heart.half {
+      background-image: url('assets/heart_half.png');
+    }
+    .heart.empty {
+      background-image: url('assets/heart_empty.png');
+    }
+    #score {
+      font-size: 24px;
+      background-color: rgba(0, 0, 0, 0.6);
+      padding: 5px 10px;
+      border-radius: 4px;
+    }
+
+    /* =======================
+       FONDO PIXELADO CON SCROLL
+       ======================= */
+    #background {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 1600px;  /* Doble de 800 para scroll */
+      height: 500px;
+      background: url('assets/background_pixel.png') repeat-x;
+      background-size: cover;
+      z-index: 5;
+      animation: scrollBackground 12s linear infinite;
+    }
+    @keyframes scrollBackground {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-800px); }
+    }
+
+    /* =======================
+       PERSONAJE Y ZOMBIE (ANIMACIONES)
+       ======================= */
+    #character,
+    #zombie {
+      position: absolute;
+      width: 120px;
+      height: 120px;
+      background-size: contain;
+      background-repeat: no-repeat;
+      z-index: 15;
+      animation: bob 2s ease-in-out infinite;
+    }
+    @keyframes bob {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    #character {
+      left: 50px;
+      bottom: 120px;
+      background-image: url('assets/character_static.png');
+    }
+    #zombie {
+      right: 50px;
+      bottom: 120px;
+      background-image: url('assets/zombie_weak.png');
+    }
+
+    /* Clases para animación de ataque */
+    .attack-right {
+      animation: attackRight 0.3s forwards;
+    }
+    .attack-left {
+      animation: attackLeft 0.3s forwards;
+    }
+    @keyframes attackRight {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(40px); }
+      100% { transform: translateX(0); }
+    }
+    @keyframes attackLeft {
+      0% { transform: translateX(0); }
+      50% { transform: translateX(-40px); }
+      100% { transform: translateX(0); }
+    }
+
+    /* =======================
+       PROYECTILES: ONDA DE ENERGÍA Y OBJETO ZOMBI
+       ======================= */
+    .projectile {
+      position: absolute;
+      width: 40px;
+      height: 20px;
+      background: radial-gradient(circle at center, rgba(255,255,0,1) 0%, rgba(255,165,0,0.7) 70%);
+      border-radius: 50%;
+      z-index: 14;
+      opacity: 0.9;
+      animation: moveRight 0.5s forwards;
+    }
+    .projectile-zombie {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: radial-gradient(circle at center, rgba(100,255,100,1) 0%, rgba(0,128,0,0.7) 70%);
+      border-radius: 50%;
+      z-index: 14;
+      opacity: 0.9;
+      animation: moveLeft 0.5s forwards;
+    }
+    @keyframes moveRight {
+      from { transform: translateX(0); }
+      to   { transform: translateX(500px); opacity: 0; }
+    }
+    @keyframes moveLeft {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-500px); opacity: 0; }
+    }
+
+    /* =======================
+       CAJA DE PREGUNTA Y BOTONES
+       ======================= */
+    #question-box {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 700px;
+      background-color: rgba(0, 0, 0, 0.75);
+      border-radius: 8px;
+      padding: 15px;
+      text-align: center;
+      color: #fff;
+      z-index: 20;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 50px;
+    }
+    #current-word {
+      font-size: 36px;
+    }
+    .btn-answer {
+      display: inline-block;
+      padding: 10px 20px;
+      font-size: 20px;
+      color: #333;
+      background-color: #f9d342;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .btn-answer:hover {
+      background-color: #e0bc38;
+    }
+
+    /* =======================
+       OVERLAY DE POWER-UP
+       ======================= */
+    #powerup-overlay {
+      display: none;
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 800px;
+      height: 500px;
+      background: rgba(0, 0, 0, 0.8);
+      z-index: 30;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    #powerup-box {
+      background-color: #222;
+      border: 2px solid #f9d342;
+      border-radius: 8px;
+      width: 600px;
+      padding: 20px;
+      text-align: center;
+    }
+    #powerup-box h2 {
+      margin-bottom: 20px;
+      font-size: 28px;
+      color: #f9d342;
+    }
+    .powerup-btn {
+      display: inline-block;
+      margin: 10px 20px;
+      padding: 12px 25px;
+      font-size: 22px;
+      background-color: #4caf50;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    .powerup-btn:hover {
+      background-color: #45a047;
+    }
+
+    /* =======================
+       MENSAJE DE GAME OVER
+       ======================= */
+    #message {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 30px 40px;
+      border-radius: 8px;
+      font-size: 28px;
+      text-align: center;
+      display: none;
+      z-index: 40;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="game-container">
+    <!-- HUD: Corazones y Score -->
+    <div id="hud">
+      <div id="hearts"></div>
+      <div id="score">Score: 0</div>
+    </div>
+
+    <!-- Fondo Pixelado -->
+    <div id="background"></div>
+
+    <!-- Personaje y Zombi -->
+    <div id="character"></div>
+    <div id="zombie"></div>
+
+    <!-- Caja de Pregunta y Botones -->
+    <div id="question-box">
+      <button id="btn-seen" class="btn-answer">SEEN</button>
+      <div id="current-word">palabra</div>
+      <button id="btn-new" class="btn-answer">NEW</button>
+    </div>
+
+    <!-- Overlay de Power-Up -->
+    <div id="powerup-overlay">
+      <div id="powerup-box">
+        <h2>¡Power-Up! Elige una Mejora:</h2>
+        <button id="powerup-health" class="powerup-btn">💖 Health</button>
+        <button id="powerup-damage" class="powerup-btn">💥 Damage</button>
+        <button id="powerup-resistance" class="powerup-btn">🛡️ Resistance</button>
+      </div>
+    </div>
+
+    <!-- Mensaje de Game Over o Victoria -->
+    <div id="message"></div>
+  </div>
+
+  <script>
+    /***********************************************
+     *   LÓGICA DEL JUEGO: ZombieWord Animado Mejorado
+     ***********************************************/
+
+    // --- LISTA DE PALABRAS (Balanceado: español e inglés) ---
+    const wordsList = [
+      // Español (44 palabras)
+      "amigo", "casa", "rápido", "gato", "grande", "niño", "rojo", "perro",
+      "pequeño", "feliz", "silla", "libro", "fuerte", "ciudad", "verde", "mujer",
+      "hombre", "niña", "cielo", "mar", "sol", "luna", "árboles", "flores",
+      "comida", "agua", "tierra", "fuego", "aire", "familia", "amigos", "escuela",
+      "trabajo", "pueblo", "montaña", "río", "playa", "bosque", "tren", "avión",
+      "pelota", "juego", "zapato", "camisa",
+      // Inglés (98 palabras)
+      "friend", "house", "fast", "cat", "large", "child", "red", "dog",
+      "small", "happy", "chair", "book", "strong", "city", "green", "woman",
+      "man", "girl", "sky", "sea", "sun", "moon", "trees", "flowers",
+      "food", "water", "earth", "fire", "air", "family", "friends", "school",
+      "work", "town", "mountain", "river", "beach", "forest", "train", "plane"," sheep",
+      "dragon","shrimp","onichan","senpai","sensei","arikato","onesan","ohayou", "Grazie",
+      "Ciao", "Buonasera", "Bonjour", "Merci", "Au revoir", "Un four", "Un miroir", "Une fourchette ",
+      "Arrivederci"," Per favore", "Amore", "Tutto", "Come ti chiami","Di dove sei", "Hai capito?","Stai bene",
+      "Che cosa stai facendo", "Aprire", "annyeonghaseyo", "gamsahamnida", "joesonghamnida", "aniyo", "meog-eoyo",
+      "saga", "lemon", "nein", "danke", "bitte", "hallo", "Guten Tag","Guten Morgen","Guten Abend", "Leck meine Eier ",
+      "Scheisse", "fette Hure", "verdammt", "Bleistift","Notizbuch ", "Schmetterling"
+    ];
+
+    // --- ESTADO GLOBAL ---
+    let wordHistory   = {};    // Conteo de cada palabra
+    let recentWords   = [];    // Últimas N palabras para forzar repetición
+    let currentWord   = "";    // Palabra actual
+
+    let player = {             // Estado del jugador
+      health: 3,               // Corazones iniciales
+      damage: 1,               // "Golpes" por respuesta correcta
+      resistance: false        // Si true, zombi quita solo 0.5
+    };
+    let score         = 0;     // Puntaje del jugador
+    let zombieHP      = 1;     // Vida actual del zombi
+    let hitsNeeded    = 1;     // Respuestas correctas necesarias
+    let inPowerUp     = false; // Indicador de pantalla Power-Up
+    const maxHealth   = 4;     // Máximo corazones
+
+    // --- ELEMENTOS DEL DOM ---
+    const heartsContainer    = document.getElementById("hearts");
+    const scoreDisplay       = document.getElementById("score");
+    const currentWordDisplay = document.getElementById("current-word");
+    const btnSeen            = document.getElementById("btn-seen");
+    const btnNew             = document.getElementById("btn-new");
+    const powerupOverlay     = document.getElementById("powerup-overlay");
+    const btnHealthPU        = document.getElementById("powerup-health");
+    const btnDamagePU        = document.getElementById("powerup-damage");
+    const btnResistancePU    = document.getElementById("powerup-resistance");
+    const messageBox         = document.getElementById("message");
+    const zombieElement      = document.getElementById("zombie");
+    const characterElement   = document.getElementById("character");
+
+    // --- INICIALIZACIÓN DEL JUEGO ---
+    window.addEventListener("load", () => {
+      initializeHearts();
+      generateNextEncounter(); // Genera la primera palabra y zombi
+      updateScoreDisplay();    // Asegura que score=0 se muestre
+    });
+
+    // ——————————————
+    // 1) RENDERIZAR CORAZONES EN HUD
+    // ——————————————
+    function initializeHearts() {
+      heartsContainer.innerHTML = "";
+      for (let i = 0; i < maxHealth; i++) {
+        const heartDiv = document.createElement("div");
+        heartDiv.classList.add("heart");
+        if (i < player.health) heartDiv.classList.add("full");
+        else heartDiv.classList.add("empty");
+        heartsContainer.appendChild(heartDiv);
+      }
+    }
+
+    function updateHeartsDisplay() {
+      const heartDivs = heartsContainer.querySelectorAll(".heart");
+      for (let i = 0; i < maxHealth; i++) {
+        heartDivs[i].classList.remove("full", "half", "empty");
+        if (i < Math.floor(player.health)) {
+          heartDivs[i].classList.add("full");
+        } else if (i < player.health && player.resistance) {
+          heartDivs[i].classList.add("half");
+        } else {
+          heartDivs[i].classList.add("empty");
+        }
+      }
+    }
+
+    // ——————————————
+    // 2) GENERAR PALABRA Y CONTROLAR REPETICIÓN
+    // ——————————————
+    function generateNextWord() {
+      let chooseFromRecent = false;
+      if (recentWords.length >= 1) {
+        chooseFromRecent = Math.random() < 0.4; // 40% de repetir
+      }
+
+      if (chooseFromRecent) {
+        const idx = Math.floor(Math.random() * recentWords.length);
+        currentWord = recentWords[idx];
+      } else {
+        const randomIndex = Math.floor(Math.random() * wordsList.length);
+        currentWord = wordsList[randomIndex];
+      }
+
+      // Actualizar contador en wordHistory
+      if (!wordHistory[currentWord]) {
+        wordHistory[currentWord] = 1;
+      } else {
+        wordHistory[currentWord]++;
+      }
+
+      // Agregar a recentWords y mantener máximo 4
+      recentWords.push(currentWord);
+      if (recentWords.length > 4) {
+        recentWords.shift();
+      }
+
+      currentWordDisplay.textContent = currentWord;
+    }
+
+    // CORRECCIÓN: 
+    // Si contador <= 1 → NEW; si contador ≥ 2 → SEEN.
+    function correctAnswerIsSeen() {
+      return wordHistory[currentWord] >= 2;
+    }
+
+    // ——————————————
+    // 3) MANEJO DE BOTONES “SEEN” / “NEW”
+    // ——————————————
+    btnSeen.addEventListener("click", () => {
+      if (inPowerUp) return;
+      handleAnswer(true);
+    });
+    btnNew.addEventListener("click", () => {
+      if (inPowerUp) return;
+      handleAnswer(false);
+    });
+
+    function handleAnswer(isSeenButton) {
+      const isActuallySeen = correctAnswerIsSeen();
+      if (isSeenButton === isActuallySeen) {
+        // RESPUESTA CORRECTA: ataque del caballero + daño al zombi
+        characterAttack();
+        dealDamageToZombie();
+      } else {
+        // RESPUESTA INCORRECTA: ataque del zombi
+        zombieAttack();
+      }
+      // Tras resolver, si NO estamos en pantalla de Power-Up, generamos siguiente
+      if (!inPowerUp) {
+        setTimeout(generateNextEncounter, 300);
+      }
+    }
+
+    // ——————————————
+    // 4) ANIMACIONES DE ATAQUE / DAÑO
+    // ——————————————
+    function characterAttack() {
+      characterElement.classList.add("attack-right");
+      // Crear proyectil (onda de energía)
+      const proj = document.createElement("div");
+      proj.classList.add("projectile");
+      const rect = characterElement.getBoundingClientRect();
+      const containerRect = document
+        .getElementById("game-container")
+        .getBoundingClientRect();
+      proj.style.left = rect.left - containerRect.left + 100 + "px";
+      proj.style.top = rect.top - containerRect.top + 40 + "px";
+      document.getElementById("game-container").appendChild(proj);
+      setTimeout(() => characterElement.classList.remove("attack-right"), 300);
+      setTimeout(() => proj.remove(), 500);
+    }
+
+    function zombieAttack() {
+      zombieElement.classList.add("attack-left");
+      // Crear proyectil verde del zombi
+      const projZ = document.createElement("div");
+      projZ.classList.add("projectile-zombie");
+      const rectZ = zombieElement.getBoundingClientRect();
+      const containerRect = document
+        .getElementById("game-container")
+        .getBoundingClientRect();
+      projZ.style.left = rectZ.left - containerRect.left + "px";
+      projZ.style.top = rectZ.top - containerRect.top + 40 + "px";
+      document.getElementById("game-container").appendChild(projZ);
+      setTimeout(() => zombieElement.classList.remove("attack-left"), 300);
+      setTimeout(() => {
+        projZ.remove();
+        let dmg = player.resistance ? 0.5 : 1;
+        player.health -= dmg;
+        if (player.health <= 0) {
+          player.health = 0;
+          updateHeartsDisplay();
+          gameOver();
+        } else {
+          updateHeartsDisplay();
+        }
+      }, 500);
+    }
+
+    function dealDamageToZombie() {
+      zombieHP -= player.damage;
+      zombieElement.style.opacity = "0.4";
+      setTimeout(() => zombieElement.style.opacity = "1", 120);
+
+      if (zombieHP <= 0) {
+        score++;
+        updateScoreDisplay();
+        checkPowerUpCondition();
+      }
+    }
+
+    // ——————————————
+    // 5) ACTUALIZAR SCORE Y ZOMBIE
+    // ——————————————
+    function updateScoreDisplay() {
+      scoreDisplay.textContent = `Score: ${score}`;
+    }
+
+    function updateZombieAppearance() {
+      hitsNeeded = 1 + Math.floor(score / 5);
+      zombieHP = hitsNeeded;
+      if (hitsNeeded === 1) {
+        zombieElement.style.backgroundImage = "url('assets/zombie_weak.png')";
+      } else if (hitsNeeded === 2) {
+        zombieElement.style.backgroundImage = "url('assets/zombie_medium.png')";
+      } else {
+        zombieElement.style.backgroundImage = "url('assets/zombie_strong.png')";
+      }
+    }
+
+    function generateNextEncounter() {
+      updateZombieAppearance();
+      generateNextWord();
+    }
+
+    // ——————————————
+    // 6) POWER-UP: CADA 5 PUNTOS
+    // ——————————————
+    function checkPowerUpCondition() {
+      if (score > 0 && score % 5 === 0) {
+        showPowerUpScreen();
+      }
+    }
+
+    function showPowerUpScreen() {
+      inPowerUp = true;
+      powerupOverlay.style.display = "flex";
+      // No generamos palabra nueva hasta que el usuario elija su Power-Up
+    }
+
+    function hidePowerUpScreen() {
+      inPowerUp = false;
+      powerupOverlay.style.display = "none";
+      generateNextEncounter();
+    }
+
+    btnHealthPU.addEventListener("click", () => {
+      if (player.health < maxHealth) {
+        player.health = Math.min(player.health + 1, maxHealth);
+        updateHeartsDisplay();
+      }
+      hidePowerUpScreen();
+    });
+    btnDamagePU.addEventListener("click", () => {
+      player.damage++;
+      hidePowerUpScreen();
+    });
+    btnResistancePU.addEventListener("click", () => {
+      player.resistance = true;
+      hidePowerUpScreen();
+    });
+
+    // ——————————————
+    // 7) GAME OVER
+    // ——————————————
+    function gameOver() {
+      messageBox.textContent = `¡GAME OVER!\nPuntaje final: ${score}`;
+      messageBox.style.display = "block";
+      btnSeen.disabled = true;
+      btnNew.disabled = true;
+    }
+  </script>
+</body>
+</html>
