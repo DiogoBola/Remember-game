@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <title>ZombieWord: Seen o New – Score Ilimitado</title>
+  <title>ZombieWord: Seen o New – Score Ilimitado y Multilenguaje</title>
   <style>
     /* =======================
        RESET BÁSICO Y ESTILOS
@@ -36,7 +36,7 @@
       position: relative;
       width: 800px;
       height: 500px;
-      border: 4px solid #333;
+      border: 4px solid #ff1010;
       overflow: hidden;
       background: #000; /* Fallback negro */
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
@@ -103,7 +103,7 @@
     }
 
     /* =======================
-       PERSONAJE Y ZOMBIE (ANIMACIONES)
+       PERSONAJE, ZOMBIE, ANIMACIONES
        ======================= */
     #character,
     #zombie {
@@ -129,8 +129,7 @@
       bottom: 120px;
       background-image: url('assets/zombie_weak.png');
     }
-
-    /* Clases para animación de ataque */
+    /* Animaciones de ataque */
     .attack-right {
       animation: attackRight 0.3s forwards;
     }
@@ -147,15 +146,40 @@
       50% { transform: translateX(-40px); }
       100% { transform: translateX(0); }
     }
+    /* Escudo para resistance */
+    .shield {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 4px solid rgba(0, 255, 255, 0.8);
+      background: rgba(0, 255, 255, 0.2);
+      z-index: 16;
+      animation: shield-fade 0.5s forwards;
+    }
+    @keyframes shield-fade {
+      0% { opacity: 0.9; }
+      100% { opacity: 0; }
+    }
 
     /* =======================
-       PROYECTILES: ONDA DE ENERGÍA Y OBJETO ZOMBI
+       PROYECTILES: ONDA DE ENERGÍA (DIFERENTES TIPOS)
        ======================= */
     .projectile {
       position: absolute;
       width: 40px;
       height: 20px;
       background: radial-gradient(circle at center, rgba(255,255,0,1) 0%, rgba(255,165,0,0.7) 70%);
+      border-radius: 50%;
+      z-index: 14;
+      opacity: 0.9;
+      animation: moveRight 0.5s forwards;
+    }
+    .projectile-strong {
+      position: absolute;
+      width: 80px;
+      height: 30px;
+      background: radial-gradient(circle at center, rgba(0,255,255,1) 0%, rgba(0,128,255,0.7) 70%);
       border-radius: 50%;
       z-index: 14;
       opacity: 0.9;
@@ -323,41 +347,34 @@
 
   <script>
     /***********************************************
-     *   LÓGICA DEL JUEGO: ZombieWord Animado Mejorado
+     *   LÓGICA DEL JUEGO: ZombieWord Multilenguaje
      ***********************************************/
 
-    // --- LISTA DE PALABRAS (Balanceado: español e inglés) ---
+    // --- LISTA DE PALABRAS (Balanceado: español, inglés, kichwa, francés, italiano, alemán) ---
     const wordsList = [
-      // Español (44 palabras)
-      "amigo", "casa", "rápido", "gato", "grande", "niño", "rojo", "perro",
-      "pequeño", "feliz", "silla", "libro", "fuerte", "ciudad", "verde", "mujer",
-      "hombre", "niña", "cielo", "mar", "sol", "luna", "árboles", "flores",
-      "comida", "agua", "tierra", "fuego", "aire", "familia", "amigos", "escuela",
-      "trabajo", "pueblo", "montaña", "río", "playa", "bosque", "tren", "avión",
-      "pelota", "juego", "zapato", "camisa",
-      // Inglés (98 palabras)
-      "friend", "house", "fast", "cat", "large", "child", "red", "dog",
-      "small", "happy", "chair", "book", "strong", "city", "green", "woman",
-      "man", "girl", "sky", "sea", "sun", "moon", "trees", "flowers",
-      "food", "water", "earth", "fire", "air", "family", "friends", "school",
-      "work", "town", "mountain", "river", "beach", "forest", "train", "plane"," sheep",
-      "dragon","shrimp","onichan","senpai","sensei","arikato","onesan","ohayou", "Grazie",
-      "Ciao", "Buonasera", "Bonjour", "Merci", "Au revoir", "Un four", "Un miroir", "Une fourchette ",
-      "Arrivederci"," Per favore", "Amore", "Tutto", "Come ti chiami","Di dove sei", "Hai capito?","Stai bene",
-      "Che cosa stai facendo", "Aprire", "annyeonghaseyo", "gamsahamnida", "joesonghamnida", "aniyo", "meog-eoyo",
-      "saga", "lemon", "nein", "danke", "bitte", "hallo", "Guten Tag","Guten Morgen","Guten Abend", "Leck meine Eier ",
-      "Scheisse", "fette Hure", "verdammt", "Bleistift","Notizbuch ", "Schmetterling"
+      // Español (10)
+      "amigo", "casa", "rápido", "gato", "grande", "niño", "rojo", "perro", "feliz", "agua",
+      // Inglés (10)
+      "friend", "house", "fast", "cat", "large", "child", "red", "dog", "happy", "water",
+      // Kichwa (10)
+      "runa", "chaki", "pacha", "yaku", "inti", "killa", "wañuy", "munay", "llakta", "aypi",
+      // Francés (10)
+      "bonjour", "maison", "rapide", "chat", "grand", "enfant", "rouge", "chien", "heureux", "eau",
+      // Italiano (10)
+      "amico", "casa", "veloce", "gatto", "grande", "bambino", "rosso", "cane", "felice", "acqua",
+      // Alemán (10)
+      "freund", "haus", "schnell", "katze", "groß", "kind", "rot", "hund", "glücklich", "wasser"
     ];
 
     // --- ESTADO GLOBAL ---
     let wordHistory   = {};    // Conteo de cada palabra
-    let recentWords   = [];    // Últimas N palabras para forzar repetición
-    let currentWord   = "";    // Palabra actual
+    let recentWords   = [];    // Últimas 4 palabras para forzar repetición
+    let currentWord   = "";    // Palabra actual en pantalla
 
     let player = {             // Estado del jugador
       health: 3,               // Corazones iniciales
       damage: 1,               // "Golpes" por respuesta correcta
-      resistance: false        // Si true, zombi quita solo 0.5
+      resistance: false        // Si true, zombi quita 0.5 y muestra escudo
     };
     let score         = 0;     // Puntaje del jugador
     let zombieHP      = 1;     // Vida actual del zombi
@@ -378,12 +395,13 @@
     const messageBox         = document.getElementById("message");
     const zombieElement      = document.getElementById("zombie");
     const characterElement   = document.getElementById("character");
+    const gameContainer      = document.getElementById("game-container");
 
     // --- INICIALIZACIÓN DEL JUEGO ---
     window.addEventListener("load", () => {
       initializeHearts();
-      generateNextEncounter(); // Genera la primera palabra y zombi
-      updateScoreDisplay();    // Asegura que score=0 se muestre
+      updateScoreDisplay();
+      generateNextEncounter(); // Configura primer zombi y palabra
     });
 
     // ——————————————
@@ -394,12 +412,10 @@
       for (let i = 0; i < maxHealth; i++) {
         const heartDiv = document.createElement("div");
         heartDiv.classList.add("heart");
-        if (i < player.health) heartDiv.classList.add("full");
-        else heartDiv.classList.add("empty");
+        heartDiv.classList.add(i < player.health ? "full" : "empty");
         heartsContainer.appendChild(heartDiv);
       }
     }
-
     function updateHeartsDisplay() {
       const heartDivs = heartsContainer.querySelectorAll(".heart");
       for (let i = 0; i < maxHealth; i++) {
@@ -420,9 +436,8 @@
     function generateNextWord() {
       let chooseFromRecent = false;
       if (recentWords.length >= 1) {
-        chooseFromRecent = Math.random() < 0.4; // 40% de repetir
+        chooseFromRecent = Math.random() < 0.4; // 40% de probabilidad de repetición
       }
-
       if (chooseFromRecent) {
         const idx = Math.floor(Math.random() * recentWords.length);
         currentWord = recentWords[idx];
@@ -430,25 +445,19 @@
         const randomIndex = Math.floor(Math.random() * wordsList.length);
         currentWord = wordsList[randomIndex];
       }
-
       // Actualizar contador en wordHistory
       if (!wordHistory[currentWord]) {
         wordHistory[currentWord] = 1;
       } else {
         wordHistory[currentWord]++;
       }
-
-      // Agregar a recentWords y mantener máximo 4
+      // Actualizar recentWords (mantener máximo 4)
       recentWords.push(currentWord);
-      if (recentWords.length > 4) {
-        recentWords.shift();
-      }
+      if (recentWords.length > 4) recentWords.shift();
 
       currentWordDisplay.textContent = currentWord;
     }
-
-    // CORRECCIÓN: 
-    // Si contador <= 1 → NEW; si contador ≥ 2 → SEEN.
+    // Lógica: si contador <= 1 → NEW es correcto; si >= 2 → SEEN es correcto
     function correctAnswerIsSeen() {
       return wordHistory[currentWord] >= 2;
     }
@@ -468,14 +477,13 @@
     function handleAnswer(isSeenButton) {
       const isActuallySeen = correctAnswerIsSeen();
       if (isSeenButton === isActuallySeen) {
-        // RESPUESTA CORRECTA: ataque del caballero + daño al zombi
+        // RESPUESTA CORRECTA: caballero ataca + daño al zombi
         characterAttack();
         dealDamageToZombie();
       } else {
-        // RESPUESTA INCORRECTA: ataque del zombi
+        // RESPUESTA INCORRECTA: zombi ataca
         zombieAttack();
       }
-      // Tras resolver, si NO estamos en pantalla de Power-Up, generamos siguiente
       if (!inPowerUp) {
         setTimeout(generateNextEncounter, 300);
       }
@@ -486,35 +494,33 @@
     // ——————————————
     function characterAttack() {
       characterElement.classList.add("attack-right");
-      // Crear proyectil (onda de energía)
+      // Crear proyectil: si damage ≥2 → fuerte, si no → normal
       const proj = document.createElement("div");
-      proj.classList.add("projectile");
+      if (player.damage >= 2) proj.classList.add("projectile-strong");
+      else proj.classList.add("projectile");
       const rect = characterElement.getBoundingClientRect();
-      const containerRect = document
-        .getElementById("game-container")
-        .getBoundingClientRect();
+      const containerRect = gameContainer.getBoundingClientRect();
       proj.style.left = rect.left - containerRect.left + 100 + "px";
       proj.style.top = rect.top - containerRect.top + 40 + "px";
-      document.getElementById("game-container").appendChild(proj);
+      gameContainer.appendChild(proj);
       setTimeout(() => characterElement.classList.remove("attack-right"), 300);
       setTimeout(() => proj.remove(), 500);
     }
 
     function zombieAttack() {
       zombieElement.classList.add("attack-left");
-      // Crear proyectil verde del zombi
       const projZ = document.createElement("div");
       projZ.classList.add("projectile-zombie");
       const rectZ = zombieElement.getBoundingClientRect();
-      const containerRect = document
-        .getElementById("game-container")
-        .getBoundingClientRect();
+      const containerRect = gameContainer.getBoundingClientRect();
       projZ.style.left = rectZ.left - containerRect.left + "px";
       projZ.style.top = rectZ.top - containerRect.top + 40 + "px";
-      document.getElementById("game-container").appendChild(projZ);
+      gameContainer.appendChild(projZ);
       setTimeout(() => zombieElement.classList.remove("attack-left"), 300);
       setTimeout(() => {
         projZ.remove();
+        // Si tiene resistencia, mostramos escudo momentáneo
+        if (player.resistance) showShield();
         let dmg = player.resistance ? 0.5 : 1;
         player.health -= dmg;
         if (player.health <= 0) {
@@ -527,11 +533,22 @@
       }, 500);
     }
 
+    function showShield() {
+      const shield = document.createElement("div");
+      shield.classList.add("shield");
+      // Posicionar escudo sobre el personaje
+      const rect = characterElement.getBoundingClientRect();
+      const containerRect = gameContainer.getBoundingClientRect();
+      shield.style.left = rect.left - containerRect.left + "px";
+      shield.style.top = rect.top - containerRect.top - 20 + "px";
+      gameContainer.appendChild(shield);
+      setTimeout(() => shield.remove(), 500);
+    }
+
     function dealDamageToZombie() {
       zombieHP -= player.damage;
       zombieElement.style.opacity = "0.4";
       setTimeout(() => zombieElement.style.opacity = "1", 120);
-
       if (zombieHP <= 0) {
         score++;
         updateScoreDisplay();
@@ -575,7 +592,6 @@
     function showPowerUpScreen() {
       inPowerUp = true;
       powerupOverlay.style.display = "flex";
-      // No generamos palabra nueva hasta que el usuario elija su Power-Up
     }
 
     function hidePowerUpScreen() {
