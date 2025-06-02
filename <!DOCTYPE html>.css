@@ -69,6 +69,9 @@
     }
     .heart.full {
       /*background-image: url('assets/heart_full.png');*/
+      background-image: img scr="/assets/heart_full.png";
+      background-image: img scr="./assets/heart_full.png";
+      background-image: img scr="../assets/heart_full.png";
       <background-image: img scr="/assets/heart_full.png"/>
       <background-image: img scr="./assets/heart_full.png"/>
       <background-image: img scr="../assets/heart_full.png"/>
