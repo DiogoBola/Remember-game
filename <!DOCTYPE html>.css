@@ -68,7 +68,8 @@
       background-repeat: no-repeat;
     }
     .heart.full {
-      background-image: url('assets/heart_full.png');
+      /*background-image: url('assets/heart_full.png');*/
+      background-image: scr="assets/heart_full.png";
     }
     .heart.half {
       background-image: url('assets/heart_half.png');
