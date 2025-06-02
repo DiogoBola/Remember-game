@@ -69,12 +69,8 @@
     }
     .heart.full {
       /*background-image: url('assets/heart_full.png');*/
-      background-image: "/assets/heart_full.png";
-      background-image: img scr="./assets/heart_full.png";
-      background-image: img scr="../assets/heart_full.png";
-      <background-image: img scr="/assets/heart_full.png"/>
-      <background-image: img scr="./assets/heart_full.png"/>
-      <background-image: img scr="../assets/heart_full.png"/>
+      background-image: url('https://wallpapers.com/images/high/country-scenes-vtsznhwqcdzt06ti.webp');
+      
     }
     .heart.half {
       background-image: url('assets/heart_half.png');
@@ -99,6 +95,7 @@
       width: 1600px;  /* Doble de 800 para scroll */
       height: 500px;
       background: url('assets/background_pixel.png') repeat-x;
+      background: url('https://wallpapers.com/images/high/country-scenes-vtsznhwqcdzt06ti.webp') repeat-x;
       background-size: cover;
       z-index: 5;
       animation: scrollBackground 12s linear infinite;
