@@ -69,14 +69,14 @@
     }
     .heart.full {
       /*background-image: url('assets/heart_full.png');*/
-      background-image: url('https://wallpapers.com/images/high/country-scenes-vtsznhwqcdzt06ti.webp');
+      background-image: url('heart_full.png');
       
     }
     .heart.half {
-      background-image: url('assets/heart_half.png');
+      background-image: url('heart_half.png');
     }
     .heart.empty {
-      background-image: url('assets/heart_empty.png');
+      background-image: url('heart_empty.png');
     }
     #score {
       font-size: 24px;
@@ -94,8 +94,7 @@
       left: 0;
       width: 1600px;  /* Doble de 800 para scroll */
       height: 500px;
-      background: url('assets/background_pixel.png') repeat-x;
-      background: url('https://wallpapers.com/images/high/country-scenes-vtsznhwqcdzt06ti.webp') repeat-x;
+      background: url('background_pixel.png') repeat-x;
       background-size: cover;
       z-index: 5;
       animation: scrollBackground 12s linear infinite;
